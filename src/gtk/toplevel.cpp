@@ -37,6 +37,7 @@
 
 #include "wx/gtk/private.h"
 #include "wx/gtk/private/wrapgdk.h"
+#include "wx/gtk/private/glibptr.h"
 #include "wx/gtk/private/gtk3-compat.h"
 #include "wx/gtk/private/stylecontext.h"
 #include "wx/gtk/private/win_gtk.h"
@@ -410,7 +411,15 @@ void wxTopLevelWindowGTK::GTKHandleRealized()
         if (titlebar)
         {
 #if GTK_CHECK_VERSION(3,12,0)
-            if (m_gdkDecor && wx_is_at_least_gtk3(12))
+            wxGlibPtr<gchar> globalLayout;
+            g_object_get(gtk_settings_get_default(),
+                         "gtk-decoration-layout",
+                         globalLayout.Out(),
+                         nullptr);
+
+            if ( m_gdkDecor &&
+                    wx_is_at_least_gtk3(12) &&
+                    ( !globalLayout || !strcmp(globalLayout, "menu:close") ) )
             {
                 char layout[sizeof("icon,menu:minimize,maximize,close")];
                 snprintf(layout, sizeof(layout), "icon%s:%s%s%s",
